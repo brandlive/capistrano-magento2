@@ -93,7 +93,7 @@ namespace :magento do
 
           execute :composer, "install #{composer_flags} 2>&1"
 
-          if fetch(:magento_deploy_production) and magento_version >= Gem::Version.new('2.1')
+          if fetch(:magento_deploy_production)
             composer_flags += ' --no-dev'
             execute :composer, "install #{composer_flags} 2>&1" # removes require-dev components from prev command
           end
@@ -241,7 +241,7 @@ namespace :magento do
       desc 'Deploys static view files'
       task :deploy do
         on release_roles :all do
-          _magento_version = magento_version
+          
 
           deploy_languages      = fetch(:magento_deploy_languages).join(' ')
           deploy_themes         = fetch(:magento_deploy_themes)
@@ -274,10 +274,7 @@ namespace :magento do
 
           # Run again with HTTPS env var set to 'on' to pre-generate secure versions of RequireJS configs
           deploy_flags = ['javascript', 'css', 'less', 'images', 'fonts', 'html', 'misc', 'html-minify']
-            .join(' --no-').prepend(' --no-');
-
-          # Magento 2.1.0 and earlier lack support for these flags, so generation of secure files requires full re-run
-          deploy_flags = nil if _magento_version <= Gem::Version.new('2.1.0')
+            .join(' --no-').prepend(' --no-');        
 
           within release_path do with(https: 'on') {
             static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_flags}"
