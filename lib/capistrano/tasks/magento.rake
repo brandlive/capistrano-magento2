@@ -261,6 +261,12 @@ namespace :magento do
             deploy_areas = nil
           end
 
+          if deploy_exclude_themes.count() > 0 
+            deploy_exclude_themes = deploy_exclude_themes.join(' --exclude-theme  ').prepend(' --exclude-theme  ')
+          else
+            deploy_exclude_themes = nil
+          end
+
           # Output is being checked for a success message because this command may easily fail due to customizations
           # and 2.0.x CLI commands do not return error exit codes on failure. See magento/magento2#3060 for details.
           within release_path do
@@ -269,7 +275,7 @@ namespace :magento do
             execute "touch #{release_path}/src/pub/static/deployed_version.txt"
 
             # Generates all but the secure versions of RequireJS configs
-            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}"
+            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_exclude_themes}"
           end
 
           # Run again with HTTPS env var set to 'on' to pre-generate secure versions of RequireJS configs
@@ -277,7 +283,7 @@ namespace :magento do
             .join(' --no-').prepend(' --no-');        
 
           within release_path do with(https: 'on') {
-            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_flags}"
+            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_exclude_themes}#{deploy_flags}"
           } end
         end
       end
