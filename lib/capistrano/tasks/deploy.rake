@@ -24,10 +24,10 @@ namespace :deploy do
     invoke 'magento:deploy:verify'
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
     invoke 'magento:setup:permissions'
-    if ( fetch(:magento_deploy_production) || fetch(:magento_deploy_static_content) )
-      invoke 'magento:setup:static-content:deploy'
-      invoke 'magento:setup:di:compile'
-    end
+
+    invoke 'magento:setup:static-content:deploy' if fetch(:magento_deploy_static_content)
+    invoke 'magento:setup:di:compile' if fetch(:magento_di_compile)
+    
     invoke 'magento:setup:permissions'
     invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
 

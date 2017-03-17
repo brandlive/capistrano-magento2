@@ -51,3 +51,6 @@ set :magento_deploy_pending_format, fetch(
   :magento_deploy_pending_format,
   '--pretty="format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s"'
 )
+
+set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
+set :magento_di_compile, fetch(:magento_di_compile, false)
