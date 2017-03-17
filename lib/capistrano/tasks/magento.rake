@@ -243,16 +243,22 @@ namespace :magento do
         on release_roles :all do
           _magento_version = magento_version
 
-          deploy_languages = fetch(:magento_deploy_languages).join(' ')
-          deploy_themes = fetch(:magento_deploy_themes)
+          deploy_languages      = fetch(:magento_deploy_languages).join(' ')
+          deploy_themes         = fetch(:magento_deploy_themes)
+          deploy_areas          = fetch(:magento_deploy_areas)
+          deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)
 
-          if deploy_themes.count() > 0 and _magento_version >= Gem::Version.new('2.1.1')
-            deploy_themes = deploy_themes.join(' -t ').prepend(' -t ')
-          elsif deploy_themes.count() > 0
-            warn "\e[0;31mWarning: the :magento_deploy_themes setting is only supported in Magento 2.1.1 and later\e[0m"
-            deploy_themes = nil
+
+          if deploy_themes.count() > 0 
+            deploy_themes = deploy_themes.join(' --theme ').prepend(' --theme ')          
           else
             deploy_themes = nil
+          end
+
+          if deploy_areas.count() > 0 
+            deploy_areas = deploy_areas.join(' -a ').prepend(' -a ')          
+          else
+            deploy_areas = nil
           end
 
           # Output is being checked for a success message because this command may easily fail due to customizations
@@ -263,7 +269,7 @@ namespace :magento do
             execute "touch #{release_path}/src/pub/static/deployed_version.txt"
 
             # Generates all but the secure versions of RequireJS configs
-            static_content_deploy "#{deploy_languages}#{deploy_themes}"
+            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}"
           end
 
           # Run again with HTTPS env var set to 'on' to pre-generate secure versions of RequireJS configs
@@ -274,7 +280,7 @@ namespace :magento do
           deploy_flags = nil if _magento_version <= Gem::Version.new('2.1.0')
 
           within release_path do with(https: 'on') {
-            static_content_deploy "#{deploy_languages}#{deploy_themes}#{deploy_flags}"
+            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_flags}"
           } end
         end
       end

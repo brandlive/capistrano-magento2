@@ -39,6 +39,9 @@ set :magento_deploy_languages, fetch(:magento_deploy_languages, ['en_US'])
 set :magento_deploy_maintenance, fetch(:magento_deploy_maintenance, true)
 set :magento_deploy_production, fetch(:magento_deploy_production, true)
 set :magento_deploy_themes, fetch(:magento_deploy_themes, [])
+set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, [])
+set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
+
 
 # deploy targetting defaults
 set :magento_deploy_setup_role, fetch(:magento_deploy_setup_role, :all)
@@ -54,3 +57,4 @@ set :magento_deploy_pending_format, fetch(
 
 set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
 set :magento_di_compile, fetch(:magento_di_compile, false)
+
