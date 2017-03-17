@@ -263,10 +263,10 @@ namespace :magento do
 
           if deploy_themes.count() > 0 
             deploy_themes = deploy_themes.join(' --theme ').prepend(' --theme ')          
-          else
-            deploy_themes = nil
             #--theme (-t) and --exclude-theme cannot be used at the same time 
             deploy_exclude_themes = nil
+          else
+            deploy_themes = nil            
           end
 
           # Output is being checked for a success message because this command may easily fail due to customizations
