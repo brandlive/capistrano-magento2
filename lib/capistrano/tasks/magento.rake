@@ -247,13 +247,7 @@ namespace :magento do
           deploy_themes         = fetch(:magento_deploy_themes)
           deploy_areas          = fetch(:magento_deploy_areas)
           deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)
-
-
-          if deploy_themes.count() > 0 
-            deploy_themes = deploy_themes.join(' --theme ').prepend(' --theme ')          
-          else
-            deploy_themes = nil
-          end
+        
 
           if deploy_areas.count() > 0 
             deploy_areas = deploy_areas.join(' -a ').prepend(' -a ')          
@@ -264,6 +258,14 @@ namespace :magento do
           if deploy_exclude_themes.count() > 0 
             deploy_exclude_themes = deploy_exclude_themes.join(' --exclude-theme  ').prepend(' --exclude-theme  ')
           else
+            deploy_exclude_themes = nil
+          end
+
+          if deploy_themes.count() > 0 
+            deploy_themes = deploy_themes.join(' --theme ').prepend(' --theme ')          
+          else
+            deploy_themes = nil
+            #--theme (-t) and --exclude-theme cannot be used at the same time 
             deploy_exclude_themes = nil
           end
 
