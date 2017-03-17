@@ -7,13 +7,13 @@
  # http://davidalger.com/contact/
  ##
 
-SSHKit.config.command_map[:magento] = "/usr/bin/env php -f bin/magento --"
+SSHKit.config.command_map[:magento] = "/usr/bin/env php -f src/bin/magento --"
 
 module Capistrano
   module Magento2
     module Helpers
       def magento_version
-        return Gem::Version::new((capture :php, "-f #{release_path}/bin/magento -- -V").split(' ').pop)
+        return Gem::Version::new((capture :php, "-f #{release_path}/src/bin/magento -- -V").split(' ').pop)
       end
 
       def disabled_modules

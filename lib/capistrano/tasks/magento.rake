@@ -11,7 +11,7 @@ include Capistrano::Magento2::Helpers
 include Capistrano::Magento2::Setup
 
 namespace :magento do
-
+  
   namespace :cache do
     desc 'Flush Magento cache storage'
     task :flush do
@@ -98,7 +98,7 @@ namespace :magento do
             execute :composer, "install #{composer_flags} 2>&1" # removes require-dev components from prev command
           end
 
-          if test "[ -d #{release_path}/update ]"   # can't count on this, but emit warning if not present
+          if test "[ -d #{release_path}/src/update ]"   # can't count on this, but emit warning if not present
             execute :composer, "install #{composer_flags} -d ./update 2>&1"
           else
             puts "\e[0;31m    Warning: ./update dir does not exist in repository!\n\e[0m\n"
@@ -125,13 +125,13 @@ namespace :magento do
     task :verify do
       is_err = false
       on release_roles :all do
-        unless test "[ -f #{release_path}/app/etc/config.php ]"
+        unless test "[ -f #{release_path}/src/app/etc/config.php ]"
           error "\e[0;31mThe repository is missing app/etc/config.php. Please install the application and retry!\e[0m"
           exit 1  # only need to check the repo once, so we immediately exit
         end
 
         unless test %Q[#{SSHKit.config.command_map[:php]} -r '
-              $cfg = include "#{release_path}/app/etc/env.php";
+              $cfg = include "#{release_path}/src/app/etc/env.php";
               exit((int)!isset($cfg["install"]["date"]));
           ']
           error "\e[0;31mError on #{host}:\e[0m No environment configuration could be found." +
@@ -202,11 +202,11 @@ namespace :magento do
     task :permissions do
       on release_roles :all do
         within release_path do
-          execute :find, release_path, "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
-          execute :find, release_path, "-type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
+          execute :find, "#{release_path}/src", "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
+          execute :find, "#{release_path}/src", "-type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
           
           fetch(:magento_deploy_chmod_x).each() do |file|
-            execute :chmod, "+x #{release_path}/#{file}"
+            execute :chmod, "+x #{release_path}/src/#{file}"
           end
         end
       end
@@ -260,7 +260,7 @@ namespace :magento do
           within release_path do
 
             # Workaround for 2.1 specific issue: https://github.com/magento/magento2/pull/6437
-            execute "touch #{release_path}/pub/static/deployed_version.txt"
+            execute "touch #{release_path}/src/pub/static/deployed_version.txt"
 
             # Generates all but the secure versions of RequireJS configs
             static_content_deploy "#{deploy_languages}#{deploy_themes}"

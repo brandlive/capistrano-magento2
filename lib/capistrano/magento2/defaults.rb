@@ -8,27 +8,23 @@
  ##
 
 set :linked_files, fetch(:linked_files, []).push(
-  'app/etc/env.php',
-  'var/.setup_cronjob_status',
-  'var/.update_cronjob_status'
+  'src/app/etc/env.php',
+  'src/var/.setup_cronjob_status',
+  'src/var/.update_cronjob_status',
+  'src/pub/sitemap.xml'
 )
 
 set :linked_files_touch, fetch(:linked_files_touch, []).push(
-  'app/etc/env.php',
-  'var/.setup_cronjob_status',
-  'var/.update_cronjob_status'
+  'src/app/etc/env.php',
+  'src/var/.setup_cronjob_status',
+  'src/var/.update_cronjob_status',
+  'src/pub/sitemap.xml'
 )
 
 set :linked_dirs, fetch(:linked_dirs, []).push(
-  'pub/media',
-  'pub/sitemaps',
-  'var/backups', 
-  'var/composer_home', 
-  'var/importexport', 
-  'var/import_history', 
-  'var/log',
-  'var/session', 
-  'var/tmp'
+  'src/pub/media', 
+  'src/pub/static',
+  'src/var'
 )
 
 # deploy permissions defaults

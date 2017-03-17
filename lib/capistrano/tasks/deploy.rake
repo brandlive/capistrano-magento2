@@ -24,7 +24,7 @@ namespace :deploy do
     invoke 'magento:deploy:verify'
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
     invoke 'magento:setup:permissions'
-    if fetch(:magento_deploy_production)
+    if ( fetch(:magento_deploy_production) || fetch(:magento_deploy_static_content) )
       invoke 'magento:setup:static-content:deploy'
       invoke 'magento:setup:di:compile'
     end
@@ -32,7 +32,7 @@ namespace :deploy do
     invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
 
     on release_roles :all do
-      if test "[ -f #{current_path}/bin/magento ]"
+      if test "[ -f #{current_path}/src/bin/magento ]"
         within current_path do
           execute :magento, 'maintenance:enable' if fetch(:magento_deploy_maintenance)
         end
