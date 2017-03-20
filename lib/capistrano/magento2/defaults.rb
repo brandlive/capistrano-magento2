@@ -33,14 +33,16 @@ set :magento_deploy_chmod_f, fetch(:magento_deploy_chmod_f, '0660')
 set :magento_deploy_chmod_x, fetch(:magento_deploy_chmod_x, ['bin/magento'])
 
 # deploy configuration defaults
-set :magento_deploy_composer, fetch(:magento_deploy_composer, true)
+set :magento_deploy_composer, fetch(:magento_deploy_composer, false)
 set :magento_deploy_confirm, fetch(:magento_deploy_confirm, [])
-set :magento_deploy_languages, fetch(:magento_deploy_languages, ['en_US'])
+set :magento_deploy_languages, fetch(:magento_deploy_languages, ['en_US','es_AR'])
 set :magento_deploy_maintenance, fetch(:magento_deploy_maintenance, true)
 set :magento_deploy_production, fetch(:magento_deploy_production, true)
 set :magento_deploy_themes, fetch(:magento_deploy_themes, [])
 set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, ['Magento/blank', 'Magento/luma'])
 set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
+set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
+set :magento_di_compile, fetch(:magento_di_compile, false)
 
 
 # deploy targetting defaults
@@ -55,6 +57,5 @@ set :magento_deploy_pending_format, fetch(
   '--pretty="format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s"'
 )
 
-set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
-set :magento_di_compile, fetch(:magento_di_compile, false)
+
 
