@@ -25,6 +25,7 @@ namespace :deploy do
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
     invoke 'magento:setup:permissions'
 
+    invoke 'magento:setup:static-content:remove' if fetch(:magento_remove_static_content)
     invoke 'magento:setup:static-content:deploy' if fetch(:magento_deploy_static_content)
     invoke 'magento:setup:di:compile' if fetch(:magento_di_compile)
     

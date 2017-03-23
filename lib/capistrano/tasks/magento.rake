@@ -246,7 +246,7 @@ namespace :magento do
           deploy_languages      = fetch(:magento_deploy_languages).join(' ')
           deploy_themes         = fetch(:magento_deploy_themes)
           deploy_areas          = fetch(:magento_deploy_areas)
-          deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)
+          deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)          
         
 
           if deploy_areas.count() > 0 
@@ -289,6 +289,15 @@ namespace :magento do
           } end
         end
       end
+      
+      desc 'Remove static content'
+      task ':remove' do
+        on release_roles: all do
+          within release_path do
+            execute "rm -Rf #{release_path}/src/pub/static/*"
+          end
+        end
+      end      
     end
   end
   

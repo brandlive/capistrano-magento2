@@ -42,6 +42,7 @@ set :magento_deploy_themes, fetch(:magento_deploy_themes, [])
 set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, ['Magento/blank', 'Magento/luma'])
 set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
 set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
+set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
 set :magento_di_compile, fetch(:magento_di_compile, false)
 
 
