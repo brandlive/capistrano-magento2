@@ -292,7 +292,7 @@ namespace :magento do
       
       desc 'Remove static content'
       task :remove do
-        on release_roles: all do
+        on release_roles :all do
           within release_path do
             execute "rm -Rf #{release_path}/src/pub/static/*"
           end
