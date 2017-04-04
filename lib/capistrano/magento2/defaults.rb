@@ -43,7 +43,10 @@ set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, ['Ma
 set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
 set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
 set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
+set :magento_remove_static_preprocessed, fetch(:magento_remove_static_preprocessed, false)
+
 set :magento_di_compile, fetch(:magento_di_compile, false)
+
 
 
 # deploy targetting defaults

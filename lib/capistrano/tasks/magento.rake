@@ -299,6 +299,15 @@ namespace :magento do
           end
         end
       end      
+
+      desc 'Remove View Preprocessed'
+      task :remove_preprocessed do
+        on release_roles :all do
+          within release_path do            
+            execute "rm -Rf #{release_path}/src/var/view_preprocessed/*"
+          end
+        end
+      end      
     end
   end
   
