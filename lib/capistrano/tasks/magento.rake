@@ -295,6 +295,7 @@ namespace :magento do
         on release_roles :all do
           within release_path do
             execute "rm -Rf #{release_path}/src/pub/static/*"
+            execute "rm -Rf #{release_path}/src/var/view_preprocessed/*"
           end
         end
       end      
