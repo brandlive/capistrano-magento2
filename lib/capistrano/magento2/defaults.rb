@@ -35,7 +35,7 @@ set :magento_deploy_chmod_x, fetch(:magento_deploy_chmod_x, ['bin/magento'])
 # deploy configuration defaults
 set :magento_deploy_composer, fetch(:magento_deploy_composer, false)
 set :magento_deploy_confirm, fetch(:magento_deploy_confirm, [])
-set :magento_deploy_languages, fetch(:magento_deploy_languages, ['en_US','es_AR'])
+set :magento_deploy_languages, fetch(:magento_deploy_languages, ['es_AR'])
 set :magento_deploy_maintenance, fetch(:magento_deploy_maintenance, true)
 set :magento_deploy_production, fetch(:magento_deploy_production, true)
 set :magento_deploy_themes, fetch(:magento_deploy_themes, [])
@@ -44,7 +44,6 @@ set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
 set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
 set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
 set :magento_remove_static_preprocessed, fetch(:magento_remove_static_preprocessed, false)
-
 set :magento_di_compile, fetch(:magento_di_compile, false)
 
 

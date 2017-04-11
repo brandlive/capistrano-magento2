@@ -125,10 +125,10 @@ namespace :magento do
     task :verify do
       is_err = false
       on release_roles :all do
-        unless test "[ -f #{release_path}/src/app/etc/config.php ]"
-          error "\e[0;31mThe repository is missing app/etc/config.php. Please install the application and retry!\e[0m"
-          exit 1  # only need to check the repo once, so we immediately exit
-        end
+        #unless test "[ -f #{release_path}/src/app/etc/config.php ]"
+        #  error "\e[0;31mThe repository is missing app/etc/config.php. Please install the application and retry!\e[0m"
+        #  exit 1  # only need to check the repo once, so we immediately exit
+        #end
 
         unless test %Q[#{SSHKit.config.command_map[:php]} -r '
               $cfg = include "#{release_path}/src/app/etc/env.php";
