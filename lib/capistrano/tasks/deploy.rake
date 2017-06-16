@@ -25,6 +25,7 @@ namespace :deploy do
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
     invoke 'magento:setup:permissions'
 
+    invoke 'magento:setup:di:remove' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
     invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
     invoke 'magento:setup:static-content:remove' if fetch(:magento_remove_static_content) == 'true' || fetch(:magento_remove_static_content) == true
     invoke 'magento:setup:static-content:remove_preprocessed' if fetch(:magento_remove_static_preprocessed) == 'true' || fetch(:magento_remove_static_preprocessed) == true 

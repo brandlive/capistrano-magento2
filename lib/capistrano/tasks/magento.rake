@@ -235,6 +235,16 @@ namespace :magento do
           end
         end
       end
+      desc 'Remove var/generation and var/di '
+      task :remove do
+        on release_roles :all do
+          within release_path do
+            execute "rm -Rf #{release_path}/src/var/generation/*"
+            execute "rm -Rf #{release_path}/src/var/di/*"
+          end
+        end
+      end      
+
     end
     
     namespace 'static-content' do
