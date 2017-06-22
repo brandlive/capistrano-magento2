@@ -202,8 +202,11 @@ namespace :magento do
     task :permissions do
       on release_roles :all do
         within release_path do
-          execute :find, "#{release_path}/src", "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
-          execute :find, "#{release_path}/src", "-type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
+          
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport' -type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport/*' -type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
+          #execute :find, "#{release_path}/src", "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
+          #execute :find, "#{release_path}/src", "-type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
           
           fetch(:magento_deploy_chmod_x).each() do |file|
             execute :chmod, "+x #{release_path}/src/#{file}"
