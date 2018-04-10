@@ -4,6 +4,10 @@
 
 A Capistrano extension for Magento 2 deployments. Takes care of specific Magento 2 requirements and adds tasks specific to the Magento 2 application.
 
+## Supported Magento Versions
+
+**As of version 0.7.0 this gem only supports deployment of Magento 2.1.1 or later; please use an earlier version to deploy older releases of Magento 2**
+
 ## Installation
 
 ### Standalone Installation
@@ -119,7 +123,8 @@ Before you can use Capistrano to deploy, you must configure the `config/deploy.r
 | `:magento_deploy_setup_role`   | `:all`  | Role from which primary host is chosen to run things like setup:upgrade on
 | `:magento_deploy_cache_shared` | `true`  | If true, cache operations are restricted to the primary node in setup role
 | `:magento_deploy_languages`    | `['en_US']` | Array of languages passed to static content deploy routine
-| `:magento_deploy_themes`       | `[]`   | Array of themes passed to static content deploy (Magento 2.1.1 and later)
+| `:magento_deploy_themes`       | `[]`   | Array of themes passed to static content deploy
+| `:magento_deploy_jobs`         | `4`    | Number of threads to use for static content deploy
 | `:magento_deploy_composer`     | `true` | Enables composer install behaviour in the built-in deploy routine
 | `:magento_deploy_production`   | `true` | Enables production specific DI compilation and static content generation
 | `:magento_deploy_maintenance`  | `true` | Enables use of maintenance mode while magento:setup:upgrade runs
@@ -127,6 +132,7 @@ Before you can use Capistrano to deploy, you must configure the `config/deploy.r
 | `:magento_deploy_chmod_d`      | `2770` | Default permissions applied to all directories in the release path
 | `:magento_deploy_chmod_f`      | `0660` | Default permissions applied to all non-executable files in the release path
 | `:magento_deploy_chmod_x`      | `['bin/magento']` | Default list of files in release path to set executable bit on
+| `:magento_deploy_strategy`     | `nil`  | Can be `quick`, `standard` or `compact`; supported by Magento 2.2 or later
 
 #### Example Usage
 
@@ -147,6 +153,7 @@ For the sake of simplicity in new project setups `:linked_dirs` and `:linked_fil
 ```ruby
 set :linked_files, [
   'app/etc/env.php',
+  'app/etc/config.local.php',
   'var/.setup_cronjob_status',
   'var/.update_cronjob_status'
 ]
@@ -169,6 +176,21 @@ If you would like to customize the linked files or directories for your project,
 ```ruby
 append :linked_dirs, 'path/to/link'
 ```
+
+Support for a `app/etc/config.local.php` configuration file was added to Magento 2.1.6. This file will be linked in from the `shared/app/etc` directory as of v0.6.4 of this gem. If this file is present in the project repository, the file will not be linked.
+
+### Composer Auth Credentials
+
+Magento 2's composer repository requires auth credentials to install. These can be set on target servers in a global composer `auth.json` file, the project's `composer.json` or by setting them in your deployment configuration using the following two settings:
+
+```ruby
+set :magento_auth_public_key, '<your_public_key_here>'
+set :magento_auth_private_key, '<your_prviate_key_here>'
+```
+
+To obtain these credentials, reference the official documentation on DevDocs: [Get your authentication keys](http://devdocs.magento.com/guides/v2.0/install-gde/prereq/connect-auth.html)
+
+**Caution:** When using these settings, the values will be logged to the `log/capistrano.log` file by SSHKit. They will not, however, be included in the general command output by default.
 
 ### Magento 2 Deploy Routine
 
@@ -195,6 +217,8 @@ All Magento 2 tasks used by the built-in `deploy.rake` file as well as some addi
 | magento:cache:status                  | Check Magento cache enabled status                 |
 | magento:cache:varnish:ban             | Add ban to Varnish for url(s)                      |
 | magento:composer:install              | Run composer install                               |
+| magento:deploy:mode:production        | Enables production mode                            |
+| magento:deploy:mode:show              | Displays current application mode                  |
 | magento:indexer:info                  | Shows allowed indexers                             |
 | magento:indexer:reindex               | Reindex data by all indexers                       |
 | magento:indexer:set-mode[mode,index]  | Sets mode of all indexers                          |
@@ -242,7 +266,7 @@ set :magento_deploy_pending_warn, false
 ### Pending Changes Configuration
 
 | setting                          | what it does
-| -------------------------------- | ------- | ---
+| -------------------------------- | ----------
 | `:magento_deploy_pending_role`   | Role to check for pending changes on; defaults to `:all`
 | `:magento_deploy_pending_warn`   | Set this to `false` to disable confirmational warning on zero-change deployments
 | `:magento_deploy_pending_format` | Can be used to set a custom change log format; refer to `defaults.rb` for example

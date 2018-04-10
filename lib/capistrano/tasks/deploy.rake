@@ -11,6 +11,7 @@ include Capistrano::Magento2::Helpers
 
 namespace :deploy do
   before 'deploy:check:linked_files', 'magento:deploy:check'
+  before 'deploy:symlink:linked_files', 'magento:deploy:local_config'
 
   before :starting, :confirm_action do
     if fetch(:magento_deploy_confirm).include? fetch(:stage).to_s
@@ -23,17 +24,17 @@ namespace :deploy do
   task :updated do
     invoke 'magento:deploy:verify'
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
+    invoke 'magento:deploy:version_check'
     invoke 'magento:setup:permissions'
-
     invoke 'magento:setup:di:remove' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
     invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
+    invoke 'magento:deploy:mode:production' if fetch(:magento_deploy_production) == 'true' || fetch(:magento_deploy_production) == true
     invoke 'magento:setup:static-content:remove' if fetch(:magento_remove_static_content) == 'true' || fetch(:magento_remove_static_content) == true
     invoke 'magento:setup:static-content:remove_preprocessed' if fetch(:magento_remove_static_preprocessed) == 'true' || fetch(:magento_remove_static_preprocessed) == true 
     invoke 'magento:setup:static-content:deploy' if fetch(:magento_deploy_static_content) == 'true' || fetch(:magento_deploy_static_content) == true
     invoke 'magento:setup:di:compile' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
-    
+
     invoke 'magento:setup:permissions'
-    
 
     on release_roles :all do
       if test "[ -f #{current_path}/src/bin/magento ]"
@@ -45,6 +46,15 @@ namespace :deploy do
 
     invoke 'magento:setup:db:schema:upgrade'
     invoke 'magento:setup:db:data:upgrade'
+    
+    # The app:config:import command was introduced in 2.2.0; check if it exists before invoking it
+    on primary fetch(:magento_deploy_setup_role) do
+      within release_path do
+        if test :magento, 'app:config:import --help >/dev/null 2>&1'
+          invoke 'magento:app:config:import'
+        end
+      end
+    end
 
     on primary fetch(:magento_deploy_setup_role) do
       within release_path do

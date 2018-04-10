@@ -11,7 +11,29 @@ include Capistrano::Magento2::Helpers
 include Capistrano::Magento2::Setup
 
 namespace :magento do
-  
+
+  namespace :app do
+    namespace :config do
+      desc 'Create dump of application config'
+      task :dump do
+        on primary fetch(:magento_deploy_setup_role) do
+          within release_path do
+            execute :magento, 'app:config:dump'
+          end
+        end
+      end
+      
+      desc 'Import data from shared config files'
+      task :import do
+        on primary fetch(:magento_deploy_setup_role) do
+          within release_path do
+            execute :magento, 'app:config:import'
+          end
+        end
+      end
+    end
+  end
+
   namespace :cache do
     desc 'Flush Magento cache storage'
     task :flush do
@@ -81,11 +103,11 @@ namespace :magento do
   
   namespace :composer do
     desc 'Run composer install'
-    task :install do
+    task :install => :auth_config do
 
       on release_roles :all do
         within release_path do
-          composer_flags = '--prefer-dist --no-interaction'
+          composer_flags = '--no-dev --prefer-dist --no-interaction'
 
           if fetch(:magento_deploy_production)
             composer_flags += ' --optimize-autoloader'
@@ -93,15 +115,24 @@ namespace :magento do
 
           execute :composer, "install #{composer_flags} 2>&1"
 
-          if fetch(:magento_deploy_production)
-            composer_flags += ' --no-dev'
-            execute :composer, "install #{composer_flags} 2>&1" # removes require-dev components from prev command
-          end
-
-          if test "[ -d #{release_path}/src/update ]"   # can't count on this, but emit warning if not present
+          if test "[ -f #{release_path}/src/update/composer.json ]"   # can't count on this, but emit warning if not present
             execute :composer, "install #{composer_flags} -d ./update 2>&1"
           else
-            puts "\e[0;31m    Warning: ./update dir does not exist in repository!\n\e[0m\n"
+            puts "\e[0;31m    Warning: ./update/composer.json does not exist in repository!\n\e[0m\n"
+          end
+        end
+      end
+    end
+
+    task :auth_config do
+      on release_roles :all do
+        within release_path do
+          if fetch(:magento_auth_public_key) and fetch(:magento_auth_private_key)
+            execute :composer, :config, '-q',
+              fetch(:magento_auth_repo_name),
+              fetch(:magento_auth_public_key),
+              fetch(:magento_auth_private_key),
+              verbosity: Logger::DEBUG
           end
         end
       end
@@ -109,6 +140,39 @@ namespace :magento do
   end
 
   namespace :deploy do
+    namespace :mode do
+      desc "Enables production mode"
+      task :production do
+        on release_roles :all do
+          within release_path do
+            execute :magento, "deploy:mode:set production --skip-compilation"
+          end
+        end
+      end
+      
+      desc "Displays current application mode"
+      task :show do
+        on release_roles :all do
+          within release_path do
+            execute :magento, "deploy:mode:show"
+          end
+        end
+      end
+    end
+
+    task :version_check do
+      on release_roles :all do
+        within release_path do
+          _magento_version = magento_version
+          unless _magento_version >= Gem::Version.new('2.1.1')
+            error "\e[0;31mVersion 0.7.0 and later of this gem only support deployment of Magento 2.1.1 or newer; " +
+              "attempted to deploy v" + _magento_version.to_s + ". Please try again using an earlier version of this gem!\e[0m"
+            exit 1  # only need to check a single server, exit immediately
+          end
+        end
+      end
+    end
+
     task :check do
       on release_roles :all do
         next unless any? :linked_files_touch
@@ -135,11 +199,22 @@ namespace :magento do
               exit((int)!isset($cfg["install"]["date"]));
           ']
           error "\e[0;31mError on #{host}:\e[0m No environment configuration could be found." +
-                " Please configure app/etc/env.php and retry!"
+                " Please configure src/app/etc/env.php and retry!"
           is_err = true
         end
       end
       exit 1 if is_err
+    end
+
+    task :local_config do
+      on release_roles :all do
+        if test "[ -f #{release_path}/src/app/etc/config.local.php ]"
+          info "The repository contains app/etc/config.local.php, removing from :linked_files list."
+          _linked_files = fetch(:linked_files, [])
+          _linked_files.delete('src/app/etc/config.local.php')
+          set :linked_files, _linked_files
+        end
+      end
     end
   end
 
@@ -169,7 +244,7 @@ namespace :magento do
       task :upgrade do
         on primary fetch(:magento_deploy_setup_role) do
           within release_path do
-            db_status = capture :magento, 'setup:db:status', verbosity: Logger::INFO
+            db_status = capture :magento, 'setup:db:status --no-ansi', verbosity: Logger::INFO
             
             if not db_status.to_s.include? 'All modules are up to date'
               execute :magento, 'setup:db-schema:upgrade'
@@ -202,7 +277,6 @@ namespace :magento do
     task :permissions do
       on release_roles :all do
         within release_path do
-          
           execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport' -type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
           execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport/*' -type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
           #execute :find, "#{release_path}/src", "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
@@ -242,8 +316,11 @@ namespace :magento do
       task :remove do
         on release_roles :all do
           within release_path do
+            ## For Magento 2.1
             execute "rm -Rf #{release_path}/src/var/generation/*"
             execute "rm -Rf #{release_path}/src/var/di/*"
+            ## For Magento 2.2 and later
+            execute "rm -Rf #{release_path}/src/generated/*"
           end
         end
       end      
@@ -254,25 +331,24 @@ namespace :magento do
       desc 'Deploys static view files'
       task :deploy do
         on release_roles :all do
-          
+          _magento_version = magento_version
 
-          deploy_languages      = fetch(:magento_deploy_languages).join(' ')
           deploy_themes         = fetch(:magento_deploy_themes)
           deploy_areas          = fetch(:magento_deploy_areas)
-          deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)          
-        
+          deploy_exclude_themes = fetch(:magento_deploy_excludes_themes)
+          deploy_jobs           = fetch(:magento_deploy_jobs)
 
           if deploy_areas.count() > 0 
             deploy_areas = deploy_areas.join(' -a ').prepend(' -a ')          
           else
             deploy_areas = nil
-          end
+          end      
 
           if deploy_exclude_themes.count() > 0 
             deploy_exclude_themes = deploy_exclude_themes.join(' --exclude-theme  ').prepend(' --exclude-theme  ')
           else
             deploy_exclude_themes = nil
-          end
+          end  
 
           if deploy_themes.count() > 0 
             deploy_themes = deploy_themes.join(' --theme ').prepend(' --theme ')          
@@ -282,27 +358,58 @@ namespace :magento do
             deploy_themes = nil            
           end
 
-          # Output is being checked for a success message because this command may easily fail due to customizations
-          # and 2.0.x CLI commands do not return error exit codes on failure. See magento/magento2#3060 for details.
-          within release_path do
-
-            # Workaround for 2.1 specific issue: https://github.com/magento/magento2/pull/6437
-            execute "touch #{release_path}/src/pub/static/deployed_version.txt"
-
-            # Generates all but the secure versions of RequireJS configs
-            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_exclude_themes}"
+          if deploy_jobs
+            deploy_jobs = "--jobs #{deploy_jobs} "
+          else
+            deploy_jobs = nil
           end
 
-          # Run again with HTTPS env var set to 'on' to pre-generate secure versions of RequireJS configs
-          deploy_flags = ['javascript', 'css', 'less', 'images', 'fonts', 'html', 'misc', 'html-minify']
-            .join(' --no-').prepend(' --no-');        
+          # Workaround core-bug with multi-lingual deployments on Magento 2.1.3 and greater. In these versions each
+          # language must be iterated individually. See issue #72 for details.
+          if _magento_version >= Gem::Version.new('2.1.3')
+            deploy_languages = fetch(:magento_deploy_languages)
+          else
+            deploy_languages = [fetch(:magento_deploy_languages).join(' ')]
+          end
 
-          within release_path do with(https: 'on') {
-            static_content_deploy "#{deploy_languages}#{deploy_areas}#{deploy_themes}#{deploy_exclude_themes}#{deploy_flags}"
-          } end
+          # Magento 2.2 introduced static content compilation strategies that can be one of the following:
+          # quick (default), standard (like previous versions) or compact
+          compilation_strategy = fetch(:magento_deploy_strategy)
+          if compilation_strategy and _magento_version >= Gem::Version.new('2.2.0')
+            compilation_strategy =  "-s #{compilation_strategy} "
+          else
+            compilation_strategy = nil
+          end
+
+          within release_path do
+            # Magento 2.1 will fail to deploy if this file does not exist and static asset signing is enabled
+            execute "touch #{release_path}/src/pub/static/deployed_version.txt"
+
+            # This loop exists to support deploy on versions where each language must be deployed seperately
+            deploy_languages.each do |lang|
+              static_content_deploy "#{compilation_strategy}#{deploy_jobs}#{lang}#{deploy_themes}#{deploy_areas}#{deploy_exclude_themes}"
+            end
+          end
+
+          # Run again with HTTPS env var set to 'on' to pre-generate secure versions of RequireJS configs. A
+          # single run on these Magento versions will fail to generate the secure requirejs-config.js file.
+          if _magento_version < Gem::Version.new('2.1.8')
+            deploy_flags = ['css', 'less', 'images', 'fonts', 'html', 'misc', 'html-minify']
+              .join(' --no-').prepend(' --no-');
+
+            within release_path do with(https: 'on') {
+              # This loop exists to support deploy on versions where each language must be deployed seperately
+              deploy_languages.each do |lang|
+                static_content_deploy "#{compilation_strategy}#{deploy_jobs}#{lang}#{deploy_themes}#{deploy_areas}#{deploy_exclude_themes}#{deploy_flags}"
+              end
+            } end
+          end
+
+          # Set the deployed_version of static content to ensure it matches across all hosts
+          upload!(StringIO.new(deployed_version), "#{release_path}/src/pub/static/deployed_version.txt")
         end
       end
-      
+
       desc 'Remove static content'
       task :remove do
         on release_roles :all do
@@ -321,9 +428,10 @@ namespace :magento do
           end
         end
       end      
+
     end
-  end
-  
+  end 
+
   namespace :maintenance do
     desc 'Enable maintenance mode'
     task :enable do

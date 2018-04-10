@@ -9,6 +9,7 @@
 
 set :linked_files, fetch(:linked_files, []).push(
   'src/app/etc/env.php',
+  'src/app/etc/config.local.php',
   'src/var/.setup_cronjob_status',
   'src/var/.update_cronjob_status',
   'src/pub/sitemap.xml'
@@ -16,6 +17,7 @@ set :linked_files, fetch(:linked_files, []).push(
 
 set :linked_files_touch, fetch(:linked_files_touch, []).push(
   'src/app/etc/env.php',
+  'src/app/etc/config.local.php',
   'src/var/.setup_cronjob_status',
   'src/var/.update_cronjob_status',
   'src/pub/sitemap.xml'
@@ -23,9 +25,15 @@ set :linked_files_touch, fetch(:linked_files_touch, []).push(
 
 set :linked_dirs, fetch(:linked_dirs, []).push(
   'src/pub/media', 
+  'src/pub/sitemaps',
   'src/pub/static',
   'src/var'
 )
+
+# magento composer repository auth credentials
+set :magento_auth_repo_name, fetch(:magento_auth_repo_name, 'http-basic.repo.magento.com')
+set :magento_auth_public_key, fetch(:magento_auth_public_key, false)
+set :magento_auth_private_key, fetch(:magento_auth_private_key, false)
 
 # deploy permissions defaults
 set :magento_deploy_chmod_d, fetch(:magento_deploy_chmod_d, '2770')
@@ -45,7 +53,8 @@ set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
 set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
 set :magento_remove_static_preprocessed, fetch(:magento_remove_static_preprocessed, false)
 set :magento_di_compile, fetch(:magento_di_compile, false)
-
+set :magento_deploy_jobs, fetch(:magento_deploy_jobs, nil)      # this defaults to 4 when supported by bin/magento
+set :magento_deploy_strategy, fetch(:magento_deploy_strategy, nil)  # Magento 2.2 or later only: http://bit.ly/2yhMvVv
 
 
 # deploy targetting defaults
@@ -57,7 +66,7 @@ set :magento_deploy_pending_role, fetch(:magento_deploy_pending_role, :all)
 set :magento_deploy_pending_warn, fetch(:magento_deploy_pending_warn, true)
 set :magento_deploy_pending_format, fetch(
   :magento_deploy_pending_format,
-  '--pretty="format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s"'
+  '--pretty="format:%C(yellow)%h %Cblue%>(12)%ai %Cgreen%<(7)%aN%Cred%d %Creset%s"'
 )
 
 
