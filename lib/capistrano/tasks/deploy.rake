@@ -36,13 +36,14 @@ namespace :deploy do
 
     invoke 'magento:setup:permissions'
 
-    on release_roles :all do
-      if test "[ -f #{current_path}/src/bin/magento ]"
-        within current_path do
-          execute :magento, 'maintenance:enable' if fetch(:magento_deploy_maintenance)
-        end
-      end
-    end
+    # Comento esta parte ya que pongo la placa mas arriba
+    #on release_roles :all do
+    #  if test "[ -f #{current_path}/src/bin/magento ]"
+    #    within current_path do
+    #      execute :magento, 'maintenance:enable' if fetch(:magento_deploy_maintenance)
+    #    end
+    #  end
+    #end
 
     invoke 'magento:setup:db:schema:upgrade'
     invoke 'magento:setup:db:data:upgrade'

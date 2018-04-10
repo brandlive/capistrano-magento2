@@ -419,6 +419,8 @@ namespace :magento do
         on release_roles :all do
           within release_path do
             execute "rm -rf #{release_path}/src/pub/static/*"
+            execute "rm -rf #{release_path}/src/var/cache/*"
+            execute "rm -rf #{release_path}/src/var/page_cache/*"
             execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
           end
         end
