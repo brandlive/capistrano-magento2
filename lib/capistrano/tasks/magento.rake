@@ -279,6 +279,10 @@ namespace :magento do
         within release_path do
           execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport' -type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
           execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/importexport/*' -type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/int' -type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/int/*' -type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/tmp' -type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
+          execute "find '#{release_path}/src' -not -path '#{release_path}/src/var/tmp/*' -type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
           #execute :find, "#{release_path}/src", "-type d -exec chmod #{fetch(:magento_deploy_chmod_d).to_i} {} +"
           #execute :find, "#{release_path}/src", "-type f -exec chmod #{fetch(:magento_deploy_chmod_f).to_i} {} +"
           
@@ -317,10 +321,10 @@ namespace :magento do
         on release_roles :all do
           within release_path do
             ## For Magento 2.1
-            execute "rm -Rf #{release_path}/src/var/generation/*"
-            execute "rm -Rf #{release_path}/src/var/di/*"
+            execute "rm -rf #{release_path}/src/var/generation/*"
+            execute "rm -rf #{release_path}/src/var/di/*"
             ## For Magento 2.2 and later
-            execute "rm -Rf #{release_path}/src/generated/*"
+            execute "rm -rf #{release_path}/src/generated/*"
           end
         end
       end      
@@ -414,8 +418,8 @@ namespace :magento do
       task :remove do
         on release_roles :all do
           within release_path do
-            execute "rm -Rf #{release_path}/src/pub/static/*"
-            execute "rm -Rf #{release_path}/src/var/view_preprocessed/*"
+            execute "rm -rf #{release_path}/src/pub/static/*"
+            execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
           end
         end
       end      
@@ -424,7 +428,7 @@ namespace :magento do
       task :remove_preprocessed do
         on release_roles :all do
           within release_path do            
-            execute "rm -Rf #{release_path}/src/var/view_preprocessed/*"
+            execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
           end
         end
       end      
