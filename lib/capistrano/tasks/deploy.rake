@@ -29,8 +29,9 @@ namespace :deploy do
     invoke 'magento:setup:di:remove' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
     invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
     invoke 'magento:deploy:mode:production' if fetch(:magento_deploy_production) == 'true' || fetch(:magento_deploy_production) == true
-    invoke 'magento:setup:static-content:remove' if fetch(:magento_remove_static_content) == 'true' || fetch(:magento_remove_static_content) == true
-    invoke 'magento:setup:static-content:remove_preprocessed' if fetch(:magento_remove_static_preprocessed) == 'true' || fetch(:magento_remove_static_preprocessed) == true 
+    # Elimino siempre contenido estatico
+    invoke 'magento:setup:static-content:remove' #if fetch(:magento_remove_static_content) == 'true' || fetch(:magento_remove_static_content) == true
+    #invoke 'magento:setup:static-content:remove_preprocessed' if fetch(:magento_remove_static_preprocessed) == 'true' || fetch(:magento_remove_static_preprocessed) == true 
     invoke 'magento:setup:static-content:deploy' if fetch(:magento_deploy_static_content) == 'true' || fetch(:magento_deploy_static_content) == true
     invoke 'magento:setup:di:compile' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
 
