@@ -321,10 +321,10 @@ namespace :magento do
         on release_roles :all do
           within release_path do
             ## For Magento 2.1
-            execute "rm -rf #{release_path}/src/var/generation/*"
-            execute "rm -rf #{release_path}/src/var/di/*"
+            execute "rm -Rf #{release_path}/src/var/generation/*"
+            execute "rm -Rf #{release_path}/src/var/di/*"
             ## For Magento 2.2 and later
-            execute "rm -rf #{release_path}/src/generated/*"
+            execute "rm -Rf #{release_path}/src/generated/*"
           end
         end
       end      
