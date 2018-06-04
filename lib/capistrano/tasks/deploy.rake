@@ -26,29 +26,28 @@ namespace :deploy do
     invoke 'magento:composer:install' if fetch(:magento_deploy_composer)
     invoke 'magento:deploy:version_check'
     invoke 'magento:setup:permissions'
-    invoke 'magento:setup:di:remove' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
-    invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
+    
+    # If production mode is true we set production mode skipping compilation
     invoke 'magento:deploy:mode:production' if fetch(:magento_deploy_production) == 'true' || fetch(:magento_deploy_production) == true
-    # Elimino siempre contenido estatico
-    invoke 'magento:setup:static-content:remove' #if fetch(:magento_remove_static_content) == 'true' || fetch(:magento_remove_static_content) == true
-    #invoke 'magento:setup:static-content:remove_preprocessed' if fetch(:magento_remove_static_preprocessed) == 'true' || fetch(:magento_remove_static_preprocessed) == true 
-    invoke 'magento:setup:static-content:deploy' if fetch(:magento_deploy_static_content) == 'true' || fetch(:magento_deploy_static_content) == true
-    invoke 'magento:setup:di:compile' if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
+
+    invoke 'magento:maintenance:enable' if fetch(:magento_deploy_maintenance)
+
+    # Remove current static content before generating new one
+    if fetch(:magento_deploy_static_content) == 'true' || fetch(:magento_deploy_static_content) == true
+      invoke 'magento:setup:static-content:remove' 
+      invoke 'magento:setup:static-content:deploy'
+    end
+
+    # If we need to upgrade database and compile
+    if fetch(:magento_di_compile) == 'true' || fetch(:magento_di_compile) == true
+      invoke 'magento:setup:di:remove'
+      invoke 'magento:setup:di:compile'
+      invoke 'magento:setup:db:schema:upgrade'
+      invoke 'magento:setup:db:data:upgrade'
+    end
 
     invoke 'magento:setup:permissions'
 
-    # Comento esta parte ya que pongo la placa mas arriba
-    #on release_roles :all do
-    #  if test "[ -f #{current_path}/src/bin/magento ]"
-    #    within current_path do
-    #      execute :magento, 'maintenance:enable' if fetch(:magento_deploy_maintenance)
-    #    end
-    #  end
-    #end
-
-    invoke 'magento:setup:db:schema:upgrade'
-    invoke 'magento:setup:db:data:upgrade'
-    
     # The app:config:import command was introduced in 2.2.0; check if it exists before invoking it
     on primary fetch(:magento_deploy_setup_role) do
       within release_path do

@@ -316,7 +316,7 @@ namespace :magento do
           end
         end
       end
-      desc 'Remove var/generation and var/di '
+      desc 'Remove var/generation and var/di or src/generated if it is Magento 2.2.x'
       task :remove do
         on release_roles :all do
           within release_path do
@@ -414,22 +414,13 @@ namespace :magento do
         end
       end
 
-      desc 'Remove static content'
+      desc 'Remove static content, cache, page_cache and view_preprocessed'
       task :remove do
         on release_roles :all do
           within release_path do
             execute "rm -rf #{release_path}/src/pub/static/*"
             execute "rm -rf #{release_path}/src/var/cache/*"
             execute "rm -rf #{release_path}/src/var/page_cache/*"
-            execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
-          end
-        end
-      end      
-
-      desc 'Remove View Preprocessed'
-      task :remove_preprocessed do
-        on release_roles :all do
-          within release_path do            
             execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
           end
         end

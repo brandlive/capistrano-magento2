@@ -51,7 +51,6 @@ set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, ['Ma
 set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
 set :magento_deploy_static_content, fetch(:magento_deploy_static_content, false)
 set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
-set :magento_remove_static_preprocessed, fetch(:magento_remove_static_preprocessed, false)
 set :magento_di_compile, fetch(:magento_di_compile, false)
 set :magento_deploy_jobs, fetch(:magento_deploy_jobs, nil)      # this defaults to 4 when supported by bin/magento
 set :magento_deploy_strategy, fetch(:magento_deploy_strategy, nil)  # Magento 2.2 or later only: http://bit.ly/2yhMvVv
