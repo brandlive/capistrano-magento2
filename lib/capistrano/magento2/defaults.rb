@@ -12,7 +12,8 @@ set :linked_files, fetch(:linked_files, []).push(
   'src/app/etc/config.local.php',
   'src/var/.setup_cronjob_status',
   'src/var/.update_cronjob_status',
-  'src/pub/sitemap.xml'
+  'src/pub/sitemap.xml',
+  'src/pub/robots.xml'
 )
 
 set :linked_files_touch, fetch(:linked_files_touch, []).push(
@@ -20,7 +21,8 @@ set :linked_files_touch, fetch(:linked_files_touch, []).push(
   'src/app/etc/config.local.php',
   'src/var/.setup_cronjob_status',
   'src/var/.update_cronjob_status',
-  'src/pub/sitemap.xml'
+  'src/pub/sitemap.xml',
+  'src/pub/robots.xml'
 )
 
 set :linked_dirs, fetch(:linked_dirs, []).push(
