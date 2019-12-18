@@ -1,5 +1,60 @@
 # Capistrano::Magento2 Change Log
 
+0.8.9
+=========
+
+* Fixed issue with RabbitMQ settings caused by app:config:import running after setup-upgrade step vs prior to the database upgrades (which connects to RabbitMQ in recurring data upgrade scripts)
+
+0.8.8
+==========
+
+* Added support for zero-side-effect pipeline deployments when scopes/themes have been dumped to config.php
+
+0.8.7
+==========
+
+* Updated use of `touch` to run such that SSHKit prefixes may be used (PR #110)
+
+0.8.6
+==========
+
+* Fixed possible race condition in `magento:deploy:version_check` when `app/etc/env.php` resides on an NFS share
+
+0.8.5
+==========
+
+* Added ability to override flags sent to `composer install` to workaround issue in Magento 2.3 beta preventing deploy
+
+0.8.4
+==========
+
+* Disabled call to `magento:setup:db:schema:upgrade` when running a zero-down deployment
+* Disabled call to `magento:setup:db:data:upgrade` when running a zero-down deployment
+* Fixed possible race condition in `magento:deploy:mode:production` when `app/etc/env.php` resides on an NFS share
+
+0.8.3
+==========
+
+* Fixed regression failing deployment when `:magento_deploy_composer` is set to `false` (PR #106)
+
+0.8.2
+==========
+
+* Added `var/export` to default list of :linked_dirs to support bundled `dotmailer/dotmailer-magento2-extension` package
+
+0.8.1
+==========
+
+* Added `require 'capistrano/magento2/cachetool'` which may be used to enable flushing the php-opcache when [cachetool](http://gordalina.github.io/cachetool/) is installed on the server
+* Added `cachetool:opcache:status` and `cachetool:opcache:reset` commands (use `require 'capistrano/magento2/cachetool'` to enable them)
+* Fixed issue causing deployment to disable maintenance mode when manually enabled prior to deployment (issue #16)
+
+0.8.0
+==========
+
+* Added support for zero-down deployment (PR #104, issue #34)
+* Added call to "composer dump-autoload --no-dev --optimize" following DI compliation (issue #102)
+
 0.7.3
 ==========
 

@@ -107,7 +107,11 @@ namespace :magento do
 
       on release_roles :all do
         within release_path do
-          composer_flags = '--no-dev --prefer-dist --no-interaction'
+          composer_flags = '--prefer-dist --no-interaction'
+
+          if fetch(:magento_deploy_no_dev)
+            composer_flags += ' --no-dev'
+          end
 
           if fetch(:magento_deploy_production)
             composer_flags += ' --optimize-autoloader'
@@ -120,6 +124,26 @@ namespace :magento do
           else
             puts "\e[0;31m    Warning: ./update/composer.json does not exist in repository!\n\e[0m\n"
           end
+        end
+      end
+    end
+
+    desc 'Run composer dump-autoload'
+    task 'dump-autoload' do
+
+      on release_roles :all do
+        within release_path do
+          composer_flags = '--no-interaction'
+
+          if fetch(:magento_deploy_no_dev)
+            composer_flags += ' --no-dev'
+          end
+
+          if fetch(:magento_deploy_production)
+            composer_flags += ' --optimize'
+          end
+
+          execute :composer, "dump-autoload #{composer_flags} 2>&1"
         end
       end
     end
@@ -194,16 +218,18 @@ namespace :magento do
         #  exit 1  # only need to check the repo once, so we immediately exit
         #end
 
-        unless test %Q[#{SSHKit.config.command_map[:php]} -r '
-              $cfg = include "#{release_path}/src/app/etc/env.php";
-              exit((int)!isset($cfg["install"]["date"]));
-          ']
-          error "\e[0;31mError on #{host}:\e[0m No environment configuration could be found." +
-                " Please configure src/app/etc/env.php and retry!"
-          is_err = true
-        end
-      end
-      exit 1 if is_err
+        # Checking app/etc/env.php in shared_path vs release_path to support the zero-side-effect
+        # builds as implemented in the :detect_scd_config hook of deploy.rake
+        #  unless test %Q[#{SSHKit.config.command_map[:php]} -r '
+        #        $cfg = include "#{release_path}/src/app/etc/env.php";
+        #        exit((int)!isset($cfg["install"]["date"]));
+        #    ']
+        #    error "\e[0;31mError on #{host}:\e[0m No environment configuration could be found." +
+        #          " Please configure src/app/etc/env.php and retry!"
+        #    is_err = true
+        #  end
+        #end
+        #exit 1 if is_err
     end
 
     task :local_config do
@@ -211,7 +237,7 @@ namespace :magento do
         if test "[ -f #{release_path}/src/app/etc/config.local.php ]"
           info "The repository contains app/etc/config.local.php, removing from :linked_files list."
           _linked_files = fetch(:linked_files, [])
-          _linked_files.delete('src/app/etc/config.local.php')
+          _linked_files.delete('/src/app/etc/config.local.php')
           set :linked_files, _linked_files
         end
       end
@@ -299,19 +325,21 @@ namespace :magento do
       task :compile do
         on release_roles :all do
           within release_path do
-            # Due to a bug in the single-tenant compiler released in 2.0 (see here for details: http://bit.ly/21eMPtt)
-            # we have to use multi-tenant currently. However, the multi-tenant is being dropped in 2.1 and is no longer
-            # present in the develop mainline, so we are testing for multi-tenant presence for long-term portability.
-            if test :magento, 'setup:di:compile-multi-tenant --help >/dev/null 2>&1'
-              output = capture :magento, 'setup:di:compile-multi-tenant', verbosity: Logger::INFO
-            else
-              output = capture :magento, 'setup:di:compile', verbosity: Logger::INFO
-            end
-            
-            # 2.0.x never returns a non-zero exit code for errors, so manually check string
-            # 2.1.x doesn't return a non-zero exit code for certain errors (see davidalger/capistrano-magento2#41)
-            if output.to_s.include? 'Errors during compilation'
-              raise Exception, 'DI compilation command execution failed'
+            with mage_mode: :production do
+              # Due to a bug in the single-tenant compiler released in 2.0 (see here for details: http://bit.ly/21eMPtt)
+              # we have to use multi-tenant currently. However, the multi-tenant is being dropped in 2.1 and is no longer
+              # present in the develop mainline, so we are testing for multi-tenant presence for long-term portability.
+              if test :magento, 'setup:di:compile-multi-tenant --help >/dev/null 2>&1'
+                output = capture :magento, 'setup:di:compile-multi-tenant', verbosity: Logger::INFO
+              else
+                output = capture :magento, 'setup:di:compile', verbosity: Logger::INFO
+              end
+              
+              # 2.0.x never returns a non-zero exit code for errors, so manually check string
+              # 2.1.x doesn't return a non-zero exit code for certain errors (see davidalger/capistrano-magento2#41)
+              if output.to_s.include? 'Errors during compilation'
+                raise Exception, 'DI compilation command execution failed'
+              end
             end
           end
         end
@@ -335,7 +363,8 @@ namespace :magento do
       desc 'Deploys static view files'
       task :deploy do
         on release_roles :all do
-          _magento_version = magento_version
+          with mage_mode: :production do
+            _magento_version = magento_version
 
           deploy_themes         = fetch(:magento_deploy_themes)
           deploy_areas          = fetch(:magento_deploy_areas)
@@ -424,10 +453,9 @@ namespace :magento do
             execute "rm -rf #{release_path}/src/var/view_preprocessed/*"
           end
         end
-      end      
-
+      end
     end
-  end 
+  end
 
   namespace :maintenance do
     desc 'Enable maintenance mode'
@@ -438,7 +466,99 @@ namespace :magento do
         end
       end
     end
-    
+
+    # Internal command used to check if maintenance mode is neeeded and disable when zero-down deploy is
+    # possible or when maintenance mode was previously enabled on the deploy target
+    task :check do
+      on primary fetch(:magento_deploy_setup_role) do
+        maintenance_enabled = nil
+        disable_maintenance = false     # Do not disable maintenance mode in absence of positive release checks
+
+        if test "[ -d #{current_path} ]"
+          within current_path do
+            # If maintenance mode is already enabled, enable maintenance mode on new release and disable management to
+            # avoid disabling maintenance mode in the event it was manually enabled prior to deployment
+            info "Checking maintenance status..."
+            maintenance_status = capture :magento, 'maintenance:status', raise_on_non_zero_exit: false
+
+            if maintenance_status.to_s.include? 'maintenance mode is active'
+              info "Maintenance mode is currently active."
+              maintenance_enabled = true
+            else
+              info "Maintenance mode is currently inactive."
+              maintenance_enabled = false
+            end
+            info ""
+          end
+        end
+
+        # If maintenance is currently active, enable it on the newly deployed release
+        if maintenance_enabled
+          info "Enabling maintenance mode on new release to match active status of current release."
+          on release_roles :all do
+            within release_path do
+              execute :magento, 'maintenance:enable'
+            end
+          end
+          info ""
+        end
+
+        within release_path do
+          # The setup:db:status command is only available in Magento 2.2.2 and later
+          if not test :magento, 'setup:db:status --help >/dev/null 2>&1'
+            info "Magento CLI command setup:db:status is not available. Maintenance mode will be used by default."
+          else
+            info "Checking database status..."
+            # Check setup:db:status output and disable maintenance mode if all modules are up-to-date
+            database_status = capture :magento, 'setup:db:status', raise_on_non_zero_exit: false
+
+            if database_status.to_s.include? 'All modules are up to date'
+              info "All modules are up to date. No database updates should occur during this release."
+              info ""
+              disable_maintenance = true
+            else
+              puts "      #{database_status.gsub("\n", "\n      ").sub("Run 'setup:upgrade' to update your DB schema and data.", "")}"
+            end
+
+            # Gather md5sums of app/etc/config.php on current and new release
+            info "Checking config status..."
+            config_hash_release = capture :md5sum, "#{release_path}/src/app/etc/config.php"
+            if test "[ -f #{current_path}/src/app/etc/config.php ]"
+              config_hash_current = capture :md5sum, "#{current_path}/src/app/etc/config.php"
+            else
+              config_hash_current = ("%-34s" % "n/a") + "#{current_path}/src/app/etc/config.php"
+            end
+
+            # Output some informational messages showing the config.php hash values
+            info "<release_path>/src/app/etc/config.php hash: #{config_hash_release.split(" ")[0]}"
+            info "<current_path>/src/app/etc/config.php hash: #{config_hash_current.split(" ")[0]}"
+
+            # If hashes differ, maintenance mode should not be disabled even if there are no database changes.
+            if config_hash_release.split(" ")[0] != config_hash_current.split(" ")[0]
+              info "Maintenance mode will not be disabled (config hashes differ)."
+              disable_maintenance = false
+            end
+            info ""
+          end
+
+          if maintenance_enabled or disable_maintenance
+            info "Disabling maintenance mode management..."
+          end
+
+          if maintenance_enabled
+            info "Maintenance mode was already active prior to deploy."
+            set :magento_deploy_maintenance, false
+          elsif disable_maintenance
+            info "There are no database updates or config changes. This is a zero-down deployment."
+            set :magento_internal_zero_down_flag, true # Set internal flag to stop db schema/data upgrades from running
+            set :magento_deploy_maintenance, false     # Disable maintenance mode management since it is not neccessary
+          else
+            info "Maintenance mode usage will be enforced per :magento_deploy_maintenance (setting is #{fetch(:magento_deploy_maintenance).to_s})"
+          end
+        end
+      end
+    end
+
     desc 'Disable maintenance mode'
     task :disable do
       on release_roles :all do

@@ -26,10 +26,16 @@ set :linked_files_touch, fetch(:linked_files_touch, []).push(
 )
 
 set :linked_dirs, fetch(:linked_dirs, []).push(
-  'src/pub/media', 
+  'src/pub/media',
   'src/pub/sitemaps',
-  'src/pub/static',
-  'src/var'
+  'src/var/backups',
+  'src/var/composer_home',
+  'src/var/importexport',
+  'src/var/import_history',
+  'src/var/export',
+  'src/var/log',
+  'src/var/session', 
+  'src/var/tmp'
 )
 
 # magento composer repository auth credentials
@@ -48,6 +54,7 @@ set :magento_deploy_confirm, fetch(:magento_deploy_confirm, [])
 set :magento_deploy_languages, fetch(:magento_deploy_languages, ['es_AR', 'en_US'])
 set :magento_deploy_maintenance, fetch(:magento_deploy_maintenance, true)
 set :magento_deploy_production, fetch(:magento_deploy_production, true)
+set :magento_deploy_no_dev, fetch(:magento_deploy_no_dev, true)
 set :magento_deploy_themes, fetch(:magento_deploy_themes, [])
 set :magento_deploy_excludes_themes, fetch(:magento_deploy_excludes_themes, ['Magento/blank', 'Magento/luma'])
 set :magento_deploy_areas, fetch(:magento_deploy_areas, [])
@@ -56,7 +63,6 @@ set :magento_remove_static_content, fetch(:magento_remove_static_content, false)
 set :magento_di_compile, fetch(:magento_di_compile, false)
 set :magento_deploy_jobs, fetch(:magento_deploy_jobs, 1)      # this defaults to 4 when supported by bin/magento
 set :magento_deploy_strategy, fetch(:magento_deploy_strategy, nil)  # Magento 2.2 or later only: http://bit.ly/2yhMvVv
-
 
 # deploy targetting defaults
 set :magento_deploy_setup_role, fetch(:magento_deploy_setup_role, :all)
@@ -70,5 +76,5 @@ set :magento_deploy_pending_format, fetch(
   '--pretty="format:%C(yellow)%h %Cblue%>(12)%ai %Cgreen%<(7)%aN%Cred%d %Creset%s"'
 )
 
-
-
+# internal flags
+set :magento_internal_zero_down_flag, fetch(:magento_internal_zero_down_flag, false)
